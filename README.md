@@ -1,0 +1,1 @@
+This is basically a project that I am doing by myself in which I try to explain with modern declarative sentences how can a poor coded document be upgraded with so little lines of code. Please feel free to join this project.
