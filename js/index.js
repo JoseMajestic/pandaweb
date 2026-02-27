@@ -1,75 +1,94 @@
 const imageWidth = 2048,
     imageHeight = 1364,
     imageAspectRatio = imageWidth / imageHeight,
-    $window = $(window);
+    $window = $(window),
+    $container = $('.container');
+
+let $speechBubble = null;
 
 const hotSpots = [{
-  'title': 'Mouth',
-  'description': 'scream.',
+  'title': 'Casa',
+  'description': 'Morada.',
   'x': -500,
   'y': -50
 }, {
-  'title': 'Body',
-  'description': 'Look at it.',
+  'title': 'Montaña',
+  'description': 'Peligroso.',
   'x': 208,
   'y': 20
 }, {
-  'title': 'Antlers',
-  'description': 'They crazy.',
+  'title': 'Estrellas',
+  'description': 'Muchas.',
   'x': 40,
   'y': -240
 }, {
-  'title': 'This Ear',
-  'description': 'It can hear things.',
+  'title': 'Cielo',
+  'description': 'Tranquilo.',
   'x': -245,
   'y': -145
 }];
 
 const appendHotSpots = () => {
-  hotSpots.forEach(() => {
-    const $hotSpot = $('<div>').addClass('hot-spot');
-    $('.container').append($hotSpot);
+  hotSpots.forEach((_, index) => {
+    const $hotSpot = $('<div>')
+      .addClass('hot-spot')
+      .attr('data-index', index)
+      .attr('role', 'button')
+      .attr('tabindex', '0');
+    $container.append($hotSpot);
   });
   positionHotSpots();
 };
 
 const appendSpeechBubble = () => {
-  const $speechBubble = $('<div>').addClass('speech-bubble');
-  $('.container').append($speechBubble);
+  $speechBubble = $('<div>').addClass('speech-bubble').css({ display: 'none', opacity: 0 });
+  $container.append($speechBubble);
 };
 
 const handleHotSpotMouseover = (e) => {
   const $currentHotSpot = $(e.currentTarget),
-      currentIndex = $currentHotSpot.index(),
-      $speechBubble = $('.speech-bubble'),
+      currentIndex = Number($currentHotSpot.data('index')),
       title = hotSpots[currentIndex]['title'],
-      description = hotSpots[currentIndex]['description'],
-      hotSpotTop = $currentHotSpot.offset().top,
-      hotSpotLeft = $currentHotSpot.offset().left,
-      hotSpotHalfSize = $currentHotSpot.width() / 2,
-      speechBubbleHalfSize = $speechBubble.width() / 2,
-      topTarget = hotSpotTop - $speechBubble.height(),
-      leftTarget = (hotSpotLeft - (speechBubbleHalfSize)) + hotSpotHalfSize;
-  
+      description = hotSpots[currentIndex]['description'];
+
+  if (!$speechBubble) {
+    return;
+  }
+
   $speechBubble.empty();
   $speechBubble.append($('<h1>').text(title));
   $speechBubble.append($('<p>').text(description));
-  
+
+  $speechBubble.css({ display: 'block', opacity: 0 });
+  const speechWidth = $speechBubble.outerWidth();
+  const speechHeight = $speechBubble.outerHeight();
+
+  const hotSpotOffset = $currentHotSpot.offset();
+  const hotSpotHalfSize = $currentHotSpot.width() / 2;
+  const speechBubbleHalfSize = speechWidth / 2;
+  const topTarget = hotSpotOffset.top - speechHeight;
+  const leftTarget = (hotSpotOffset.left - speechBubbleHalfSize) + hotSpotHalfSize;
+
   $speechBubble.css({
     'top': topTarget - 20,
-    'left': leftTarget,
-    'display': 'block'
+    'left': leftTarget
   }).stop().animate({
     opacity: 1
   }, 200);
 };
 
-const handleHotSpotMouseout = () => {
-  const $speechBubble = $('.speech-bubble');
+const handleHotSpotMouseout = (e) => {
+  if (!$speechBubble) {
+    return;
+  }
+  const relatedHotSpot = $(e.relatedTarget).closest('.hot-spot');
+  if (relatedHotSpot.length) {
+    return;
+  }
   $speechBubble.stop().animate({
     opacity: 0
   }, 200, () => {
-    $speechBubble.hide();
+    $speechBubble.css({ display: 'none' });
   });
 };
 
@@ -91,16 +110,34 @@ const positionHotSpots = () => {
       xPos = ((xPos / (windowAspectRatio / imageAspectRatio)) / imageWidth) * 100;
     }
 
+    const yValue = index === 2 ? `calc(${yPos}% + 123px)` : `${yPos}%`;
+
     $(this).css({
-      'margin-top': yPos + '%',
+      'margin-top': yValue,
       'margin-left': xPos + '%'
     });
 
   });
 };
 
-appendHotSpots();
-appendSpeechBubble();
-$(window).resize(positionHotSpots);
-$('.hot-spot').on('mouseover', handleHotSpotMouseover);
-$('.hot-spot').on('mouseout', handleHotSpotMouseout);
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  };
+};
+
+const init = () => {
+  appendHotSpots();
+  appendSpeechBubble();
+  positionHotSpots();
+
+  const debouncedResize = debounce(positionHotSpots, 150);
+  $(window).on('resize', debouncedResize);
+
+  $container.on('mouseenter', '.hot-spot', handleHotSpotMouseover);
+  $container.on('mouseleave', '.hot-spot', handleHotSpotMouseout);
+};
+
+$(init);
