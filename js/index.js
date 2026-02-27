@@ -4,6 +4,8 @@ const imageWidth = 2048,
     $window = $(window),
     $container = $('.container');
 
+const containerEl = $container.get(0);
+
 let $speechBubble = null;
 
 const hotSpots = [{
@@ -134,10 +136,25 @@ const init = () => {
   positionHotSpots();
 
   const debouncedResize = debounce(positionHotSpots, 150);
-  $(window).on('resize', debouncedResize);
+  window.addEventListener('resize', debouncedResize);
 
-  $container.on('mouseenter', '.hot-spot', handleHotSpotMouseover);
-  $container.on('mouseleave', '.hot-spot', handleHotSpotMouseout);
+  if (containerEl) {
+    containerEl.addEventListener('mouseover', (event) => {
+      const hotSpot = event.target.closest('.hot-spot');
+      if (!hotSpot || !containerEl.contains(hotSpot)) {
+        return;
+      }
+      handleHotSpotMouseover({ currentTarget: hotSpot, relatedTarget: event.relatedTarget });
+    });
+
+    containerEl.addEventListener('mouseout', (event) => {
+      const hotSpot = event.target.closest('.hot-spot');
+      if (!hotSpot || !containerEl.contains(hotSpot)) {
+        return;
+      }
+      handleHotSpotMouseout({ currentTarget: hotSpot, relatedTarget: event.relatedTarget });
+    });
+  }
 };
 
 $(init);
